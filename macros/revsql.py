@@ -16,7 +16,7 @@ def sQLTable2UMLClass(table):
     except:
         trans.rollback()
         raise
-
+    #here or in clomuns?    
     for column in table.findall('column'):
         sQLColumn2UMLAttribute(table,column)
 
@@ -30,6 +30,7 @@ def sQLColumn2UMLAttribute(table,column):
         c1.setOwner(myp)
         c1.setName(column.get('name'))
         #c2 = fact.createClass("Class4",myp)
+        #
         trans.commit()
     except:
         trans.rollback()
