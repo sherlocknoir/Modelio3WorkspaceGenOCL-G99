@@ -21,7 +21,8 @@ def sQLTable2UMLClass(table):
         sQLColumn2UMLAttribute(table,column)
 
 def sQLColumn2UMLAttribute(table,column):
-    print column.get('name')
+    print "attrb name is : "+column.get('name')
+    print "and the type for this attr is: "+column.get('type')
     trans = theSession().createTransaction("Attribute creation")
     try:
         fact= theUMLFactory()
@@ -29,6 +30,7 @@ def sQLColumn2UMLAttribute(table,column):
         c1 = fact.createAttribute()
         c1.setOwner(myp)
         c1.setName(column.get('name'))
+        c1.setType(sQLType2UMLType(column.get('type')))
         #c2 = fact.createClass("Class4",myp)
         #
         trans.commit()
@@ -39,7 +41,27 @@ def sQLColumn2UMLAttribute(table,column):
 
 
 def sQLType2UMLType(type_):
+    print "type is: "+type_
+    basicType = theSession().getModel().getUmlTypes()
     print type_
+    if type_ == "VARCHAR":
+        return basicType.getSTRING()
+    if type_ == "TEXT":
+        return basicType.getSTRING()
+    elif type_ == "INT":
+        return basicType.getINTEGER()
+    elif type_ == "BIGINT":
+        return basicType.getLONG()
+    elif type_ == "BOOL":
+        return basicType.getBOOLEAN()
+    elif type_ == "REAL":
+        return basicType.getFLOAT()
+    elif type_ == "DATE":
+        return basicType.getDATE()
+    else:
+        return basicType.getUNDEFINED()
+         
+    
 
 def sQLPrimaryKey2UML(pk):
     print pk
