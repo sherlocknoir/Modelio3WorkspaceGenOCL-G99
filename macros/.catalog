@@ -2,10 +2,12 @@
 <script name="Sandbox" path="Sandbox.py" icon-path="" show-menu="true" show-toolbar="true">
 <description></description>
 </script>
-<script name="revsql" path="revsql.py" icon-path="" show-menu="true" show-toolbar="true">
+<script name="RevSQL" path="RevSQL.py" icon-path="" show-menu="true" show-toolbar="true">
 <description></description>
 </script>
-
+<script name="GenSQL" path="GenSQL.py" icon-path="" show-menu="true" show-toolbar="true">
+<description></description>
+</script>
 <script name="Generate OCL" path="GenOCL.py" icon-path="" show-menu="true" show-toolbar="true">
 <description></description>
 </script>
