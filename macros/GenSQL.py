@@ -1,4 +1,12 @@
 """
+CREATE TABLE Persons
+(
+PersonID int,
+LastName varchar(255),
+FirstName varchar(255),
+Address varchar(255),
+City varchar(255)
+); 
 =========================================================
                        GenSQL.py
  Generate a SQL specification from a UML package
@@ -62,13 +70,18 @@ Observations
 Additional observations could go there
 The code could be better structured.
 """
+try:
+    import xml.etree.cElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
 
-def umlClass2OCL(umlclass):
+#from ElementTree_pretty import prettify
+
+def umlClass2XmlTable(umlclass):
     ""
-    # The next statement run over multiples lines but \ are not necessary
-    # because they are some ( ) [ ] { } or something that make obvious where it stop
+    tbname = umlclass.name
+    tbtype = "TABLE"
     
-    #doesnt work for class
     if isAssociationClass(umlclass):
     	print "associationClass "+ umlclass.name + " between"
     	for a in umlclass.linkToAssociation.associationPart.end:
@@ -76,10 +89,11 @@ def umlClass2OCL(umlclass):
     elif umlclass.isAbstract:
     	print "Abstract Class "+ umlclass.name + umlHeritage2OCL(umlclass)
     else:
-    	print "Class "+ umlclass.name + umlHeritage2OCL(umlclass)
+    	classTable = ET.SubElement(tables, "table", name=tbname,type=tbtype)
+
     
     if len(umlclass.ownedAttribute)>0:
-        umlAttributes2OCL(umlclass.ownedAttribute)
+        umlAttributes2OXmlColumn(umlclass.ownedAttribute,classTable)
   
     if len(umlclass.ownedOperation)>0:
         umlMethod2OCL(umlclass.ownedOperation)
@@ -88,6 +102,7 @@ def umlClass2OCL(umlclass):
 
 def umlHeritage2OCL(umlclass):
 	x=[]
+
 	for p in umlclass.parent:
 		x.append(p.superType.name)
 	if len(x)>0:	
@@ -119,10 +134,11 @@ def umlReturnVal2OCL(operation):
 	else:
 		return ""
 
-def umlAttributes2OCL(attributes):
+def umlAttributes2OXmlColumn(attributes, classTable):
     print "attributes"
     for a in attributes:
-        print indent(4) + a.name + " : " + umlBasicType2OCL(a.type)+umlTypeCard2OCL(a)
+        ET.SubElement(classTable, "column", name=a.name,type=umlBasicType2OCL(a.type))
+        
     
 def umlAssocation2OCL(association):
 	kind ="association "
@@ -334,6 +350,13 @@ def plural(nb, word, plural=None):
         else:
             return str(nb)+' '+plural
 #==========================Begin===================================
+dbname = "library2"
+dbtype = "MySql "
+filename = dbname+'.xml'
+root = ET.Element("database", name=dbname, type=dbtype)
+tables = ET.SubElement(root, "tables")
+
+
 if len(selectedElements)==0:   
     # indentation is important since they are no { }
     print indent(4)+"Ah no, sorry. You have no selected package."
@@ -363,7 +386,7 @@ else:
     	#print "class list======="
     	#print classesList
         for c in classesList:
-        	umlClass2OCL(c)
+        	umlClass2XmlTable(c)
     if len(assocList) >0:
     	#print "assoc list ======="
     	#print assocList
@@ -371,4 +394,6 @@ else:
     	#print assocList
     	for allasoc in assocList:
     		umlAssocation2OCL(allasoc)
+tree = ET.ElementTree(root)
+tree.write(filename)
     
