@@ -23,6 +23,8 @@ What are the current limitations?
 Curently unable to add stereo types to associations, and attributes.
 Currently only works for packages names mypackage.
 Currently uses fixed path to read the xml file.
+Associations only create the most basic type. Doesnt take into account navigation, composition, 
+aggregation or n-ary, nor multiplicity.
    
 
 Current state of the tests
@@ -47,6 +49,7 @@ except ImportError:
 
 
 def sQLTable2UMLClass(table):
+    print "Creating class: "+ table.get('name')
     trans = theSession().createTransaction("Class creation")
     try:
         fact= theUMLFactory()
@@ -54,22 +57,27 @@ def sQLTable2UMLClass(table):
         c1 = fact.createClass()
         c1.setOwner(myp)
         c1.setName(table.get('name'))
-        #c2 = fact.createClass("Class4",myp)
         trans.commit()
     except:
         trans.rollback()
         raise
-    #here or in clomuns?    
     for column in table.findall('column'):
         sQLColumn2UMLAttribute(table,column)
 
+    for pkeys in table.findall('primaryKey'):
+        sQLPrimaryKey2UML(pkeys)
+
 def sQLColumn2UMLAttribute(table,column):
-    print "attrb name is : "+column.get('name')
-    print "and the type for this attr is: "+column.get('type')
+    #todo add pk or fk
+   
+    #add associations to list
+    for child in column.findall('child'):
+        addAssocToList(table,column, child)
+   
     for parent in column.findall('parent'):
-        print "fk for the col is: "+parent.get('foreignKey')
         addAssocToList(table,column, parent)
    
+   #create attributes for class
     trans = theSession().createTransaction("Attribute creation")
     try:
         fact= theUMLFactory()
@@ -78,21 +86,16 @@ def sQLColumn2UMLAttribute(table,column):
         c1.setOwner(myp)
         c1.setName(column.get('name'))
         c1.setType(sQLType2UMLType(column.get('type')))
-        #c2 = fact.createClass("Class4",myp)
-        #
         trans.commit()
     except:
         trans.rollback()
         raise
 
-    print "i am here"
-
+    
 
 def sQLType2UMLType(type_):
-    #add stereo type fk or pk
-    print "type is: "+type_
+    #print "type is: "+type_
     basicType = theSession().getModel().getUmlTypes()
-    print type_
     if type_ == "VARCHAR":
         return basicType.getSTRING()
     if type_ == "TEXT":
@@ -113,6 +116,7 @@ def sQLType2UMLType(type_):
     
 
 def sQLPrimaryKey2UML(pk):
+    #todo
     print pk
 
 def sQLFK2UML(fk):
@@ -120,13 +124,11 @@ def sQLFK2UML(fk):
 
 def addAssocToList(table,column,association):
      #add stero type fk to name
-    print "association: source is: "+table.get('name')
-    print "association cont: the dest is: "+ association.get('table')
     
     assocInfo = {
         "from":    table.get('name'),
         "to": association.get('table'),
-        "name":  association.get('table')+'s',
+        "name":  association.get('foreignKey'),
     }
     listOfAssocs.append(assocInfo)
     return
@@ -137,8 +139,9 @@ def createUmlAssociation(source,dest,name):
         fact= theUMLFactory()
         s = instanceNamed(Class,source)
         d = instanceNamed(Class, dest)
-        asso = fact.createAssociation(s,d,dest)
-        asso.addStereotype("LocalModule", "fk")
+        asso = fact.createAssociation(s,d,'r_'+dest)
+        asso.setName(name)
+       # asso.addStereotype("LocalModule", "fk")
         trans.commit()
     except:
         trans.rollback()
@@ -163,41 +166,19 @@ tree = ET.parse('/home/jen/codeprojectsgit/dpmodels-m2sem2/Modelio3WorkspaceGenO
 root = tree.getroot()
 
 listOfAssocs =[]
-print root
-cleanPackage()
+#print root
+removeAll()
 for children in root:
     for table in children.findall('table'):
         sQLTable2UMLClass(table)
         ttype = table.get('type')
         name = table.get('name')
-        print(name, ttype)
-print"++++++++++++++++++++"
-print (listOfAssocs)
+        
+#print"++++++++++++++++++++"
+#print (listOfAssocs)
 for item in listOfAssocs:
-    print item['from'], item['to'],item['name']
+    #print item['from'], item['to'],item['name']
     source = item['from']
     dest = item['to']
     name = item['name']
     createUmlAssociation(source,dest,name)
-
-#for elem in tree.iter():
- #   print elem.tag, elem.attrib
-#print "================"
-#for c_of_root in root:
-#    for tables in c_of_root:
- #       print tables.tag, tables.attrib
-
-
-
-trans = theSession().createTransaction("Class creation")
-try:
-    fact= theUMLFactory()
-    myp = instanceNamed(Package,"MyPackage")
-    c1 = fact.createClass()
-    c1.setOwner(myp)
-    c1.setName("Class3")
-    c2 = fact.createClass("Class4",myp)
-    trans.commit()
-except:
-    trans.rollback()
-    raise
