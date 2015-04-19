@@ -9,7 +9,7 @@ City varchar(255)
 ); 
 =========================================================
                        GenSQL.py
- Generate a SQL specification from a UML package
+ Generate a XML specification from a UML package
 =========================================================
 
 FILL THIS SECTION AS SHOWN BELOW AND LINES STARTING WITH ###
@@ -19,18 +19,21 @@ FILL THIS SECTION AS SHOWN BELOW AND LINES STARTING WITH ###
 
 Current state of the generator
 ----------------------------------
-FILL THIS SECTION 
+The prupose of this generator is to create xml that can be then used in another 
+script that can write the data to a specified database type like Mysql, mongo, google spreadsheet..
 Explain which UML constructs are supported, which ones are not.
 What is good in your generator?
-	-package generation
-	-class generation
-	-enumeration generation
-	-association generation
-	-association class generation
-	-composition generation
-	-operation generation
-	-cardinality generation (could be better)
+	-xml generation
+	-class to table generation
+    -attributes to coloumns generation
+	-enumeration type generation
+	
 What are the current limitations?
+    -association generation
+    -association class generation
+    -composition generation
+    -operation generation
+    -cardinality generation (could be better)
 	-invariants
 	-aggregation generation
 	-attributes @derived comments
@@ -40,23 +43,24 @@ Current state of the tests
 --------------------------
 FILL THIS SECTION 
 Explain how did you test this generator.
- - Tested by generating the ocl for Cyber Residence and running the tests UMLtest
+ - Tested by generating the xml from library uml model to see how close it matches original xlm file.
 
 Which test are working? 
-Cyber Residence test case
-Uml Tests:
-	classes
-	Attribues Simple
-	Attribues cardinality
-	Attribues Enumeration
-	operations
-	Inheritence Single
-	Inheritence multiples
-	Associations Simple
-	Associations composite
-	Associations Class
+Library xml test case
+Xml Tests:
+	classes to tables
+	Attribues Simple to columns
 
 Which are not?
+
+    Associations Class
+    Attribues cardinality
+    Attribues Enumeration
+    operations
+    Inheritence Single
+    Inheritence multiples
+    Associations Simple
+    Associations composi
 	Attribues Visibility
 	Associations Unspecified
 	Associations Ordered
@@ -138,6 +142,11 @@ def umlAttributes2OXmlColumn(attributes, classTable):
     print "attributes"
     for a in attributes:
         ET.SubElement(classTable, "column", name=a.name,type=umlBasicType2OCL(a.type))
+        if(a.isStereotyped("LocalModule", "PK")):
+            umlPKStereoType2OXmlColumn(a.name,classTable)
+
+def umlPKStereoType2OXmlColumn(name, classTable):
+    ET.SubElement(classTable, "primaryKey", column=name)
         
     
 def umlAssocation2OCL(association):
@@ -187,18 +196,7 @@ def isAssociationClass(element):
         return element.getLinkToAssociation()!=None
     return False
 
-    
- 
-#---------------------------------------------------------
-#   Application dependent helpers on the source metamodel
-#---------------------------------------------------------
-# The functions below are defined on the UML metamodel
-# but they are defined in the context of the transformation
-# from UML Class diagramm to USE OCL. There are not
-# intended to be reusable. 
-#--------------------------------------------------------- 
 
-# example
 def associationsInPackage(package):
     """
     Return the list of all associations that start or
@@ -216,36 +214,6 @@ def associationsInPackage(package):
     					assocList.append(assoc.association)
     	
     
-
-    
-#---------------------------------------------------------
-#   Helpers for the target representation (text)
-#---------------------------------------------------------
-# The functions below aims to simplify the production of
-# textual languages. They are independent from the 
-# problem at hand and could be reused in other 
-# transformation generating text as output.
-#---------------------------------------------------------
-
-
-# for instance a function to indent a multi line string if
-# needed, or to wrap long lines after 80 characters, etc.
-
-#---------------------------------------------------------
-#           Transformation functions: UML2OCL
-#---------------------------------------------------------
-# The functions below transform each element of the
-# UML metamodel into relevant elements in the OCL language.
-# This is the core of the transformation. These functions
-# are based on the helpers defined before. They can use
-# print statement to produce the output sequentially.
-# Another alternative is to produce the output in a
-# string and output the result at the end.
-#---------------------------------------------------------
-
-
-
-# examples
 
 def umlEnumeration2OCL(enumeration):
     """
@@ -285,14 +253,7 @@ def umlTypeCard2OCL(attributes):
 
 def package2OCL(package):
     """
-    Generate a complete OCL specification for a given package.
-    The inner package structure is ignored. That is, all
-    elements useful for USE OCL (enumerations, classes, 
-    associationClasses, associations and invariants) are looked
-    recursively in the given package and output in the OCL
-    specification. The possibly nested package structure that
-    might exist is not reflected in the USE OCL specification
-    as USE is not supporting the concept of package.
+    
     """
     associationsInPackage(package)
     for element in package.ownedElement:
@@ -310,45 +271,12 @@ def package2OCL(package):
 
 
 
-#---------------------------------------------------------
-#           User interface for the Transformation 
-#---------------------------------------------------------
-# The code below makes the link between the parameter(s)
-# provided by the user or the environment and the 
-# transformation functions above.
-# It also produces the end result of the transformation.
-# For instance the output can be written in a file or
-# printed on the console.
-#---------------------------------------------------------
-
-# (1) computation of the 'package' parameter
-# (2) call of package2OCL(package)
-# (3) do something with the result
-
 
 # This is a function with two parameters, one is optional
 def indent(nb, character=' '):
     return character*nb
   
-def plural(nb, word, plural=None):
-    """ 
-    This is the documentation of the function.
-    This function returns a string that indicates how many
-    'items' there are, 'nb' being the number of 'items'
-    and 'word' the type of items. If they are more than
-    two objects a 's' is added to the word unless the
-    plural parameter is provided. In this case, the plural
-    form is returned.
-    """
-    if nb == 0:
-        return 'no '+word
-    elif nb == 1:
-        return 'one '+word
-    else:
-        if plural is None:
-            return str(nb)+' '+word+'s'
-        else:
-            return str(nb)+' '+plural
+
 #==========================Begin===================================
 dbname = "library2"
 dbtype = "MySql "
