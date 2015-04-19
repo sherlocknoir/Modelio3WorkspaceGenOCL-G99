@@ -18,9 +18,10 @@ What is good in your generator?
 Tables are translated into classes.
 Coloumns are translated into attributes.
 Foreign keys are tranlsated into associations.
+Primary key colmums are stranslated into attributes with the pk stereotype.
+Associations have the fk stereo type.
     
 What are the current limitations?
-Curently unable to add stereo types to associations, and attributes.
 Currently only works for packages names mypackage.
 Currently uses fixed path to read the xml file.
 Associations only create the most basic type. Doesnt take into account navigation, composition, 
@@ -34,7 +35,10 @@ Explain how did you test this generator.
  - Tested by generating the rational model from library.xml example
 
 Which test are working? 
-Everything wrks with the exception of primary keys and foreignKeys.
+Able to create classes from tables and attributes with the correct types
+able to create associations, from foreignKeys but not sure this is correct. 
+
+Have not tested this on another xml file which could break everything.....
     
 Observations
 ------------
@@ -65,11 +69,9 @@ def sQLTable2UMLClass(table):
         sQLColumn2UMLAttribute(table,column)
 
     for pkeys in table.findall('primaryKey'):
-        sQLPrimaryKey2UML(pkeys)
+        sQLPrimaryKey2UML(pkeys,table)
 
 def sQLColumn2UMLAttribute(table,column):
-    #todo add pk or fk
-   
     #add associations to list
     for child in column.findall('child'):
         addAssocToList(table,column, child)
@@ -115,15 +117,23 @@ def sQLType2UMLType(type_):
          
     
 
-def sQLPrimaryKey2UML(pk):
-    #todo
-    print pk
-
-def sQLFK2UML(fk):
-    print fk
+def sQLPrimaryKey2UML(pk, table):
+   
+    trans = theSession().createTransaction("Attribute creation")
+    try:
+        fact= theUMLFactory()
+        myclass = instanceNamed(Class,table.get('name'))
+        if len(myclass.ownedAttribute)>0:
+            for a in myclass.ownedAttribute:
+                if (a.name == pk.get('column')):
+                    a.addStereotype("LocalModule","PK")
+        trans.commit()
+    except:
+        trans.rollback()
+        raise
+    
 
 def addAssocToList(table,column,association):
-     #add stero type fk to name
     
     assocInfo = {
         "from":    table.get('name'),
@@ -141,7 +151,7 @@ def createUmlAssociation(source,dest,name):
         d = instanceNamed(Class, dest)
         asso = fact.createAssociation(s,d,'r_'+dest)
         asso.setName(name)
-       # asso.addStereotype("LocalModule", "fk")
+        asso.addStereotype("LocalModule", "FK")
         trans.commit()
     except:
         trans.rollback()
